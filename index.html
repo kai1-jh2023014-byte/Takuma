@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="先生と生徒で使えるクラス時間割アプリ">
+  <title>Classroom Timetable</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section id="login-screen" class="login-screen" aria-labelledby="login-title">
+      <div class="login-intro">
+        <div class="brand-mark" aria-hidden="true">T</div>
+        <p class="eyebrow">CLASSROOM / 2026</p>
+        <h1 id="login-title">一週間の予定を、<br><em>ひとつの視界に。</em></h1>
+        <p class="intro-copy">毎日の授業を見やすく整理。<br>役割に合わせて、必要な操作だけを表示します。</p>
+        <div class="week-line" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+      </div>
+      <form id="login-form" class="login-panel">
+        <div>
+          <p class="panel-kicker">WELCOME BACK</p>
+          <h2>ログイン</h2>
+          <p class="panel-description">アカウントを選択して時間割を開きます。</p>
+        </div>
+        <fieldset class="role-switch">
+          <legend class="sr-only">ログイン種別</legend>
+          <label><input type="radio" name="role" value="teacher" checked><span>先生</span></label>
+          <label><input type="radio" name="role" value="student"><span>生徒</span></label>
+        </fieldset>
+        <label class="field-label" for="username">ユーザー名</label>
+        <input id="username" name="username" class="text-input" type="text" autocomplete="username" placeholder="ユーザー名">
+        <label class="field-label" for="password">パスワード</label>
+        <input id="password" name="password" class="text-input" type="password" autocomplete="current-password" placeholder="パスワード">
+        <p id="login-error" class="form-error" role="alert"></p>
+        <button class="primary-button" type="submit">時間割を開く <span aria-hidden="true">→</span></button>
+        <p class="demo-hint">開発中はユーザー名とパスワードを空欄のまま進めます。<br>通常ログイン: 先生 <code>sensei / 1234</code>・生徒 <code>student / 5678</code></p>
+      </form>
+    </section>
+
+    <section id="dashboard" class="dashboard hidden" aria-labelledby="dashboard-title">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="トップへ戻る"><span class="brand-mark small">T</span><span>CLASSROOM</span></a>
+        <div class="topbar-actions">
+          <span id="role-badge" class="role-badge"></span>
+          <button id="menu-button" class="menu-button" type="button" aria-label="メニューを開く" aria-expanded="false" aria-controls="action-menu"><span></span><span></span><span></span></button>
+          <nav id="action-menu" class="action-menu" aria-label="操作メニュー">
+            <p class="menu-title">MENU</p>
+            <button class="menu-item view-menu-item active" type="button" data-view="calendar"><span aria-hidden="true">▦</span> カレンダー</button>
+            <button class="menu-item view-menu-item" type="button" data-view="submissions"><span aria-hidden="true">□</span> 提出物</button>
+            <button class="menu-item view-menu-item" type="button" data-view="timetable"><span aria-hidden="true">▤</span> 時間割</button>
+            <button class="menu-item view-menu-item" type="button" data-view="events"><span aria-hidden="true">✦</span> イベント</button>
+            <div class="menu-divider"></div>
+            <button id="save-button" class="menu-item teacher-only" type="button"><span aria-hidden="true">✓</span> 授業を保存</button>
+            <button id="download-button" class="menu-item teacher-only" type="button"><span aria-hidden="true">↓</span> .txtで保存</button>
+            <button id="reset-button" class="menu-item teacher-only" type="button"><span aria-hidden="true">↺</span> 初期状態に戻す</button>
+            <button id="logout-button" class="menu-item logout-item" type="button"><span aria-hidden="true">↪</span> ログアウト</button>
+          </nav>
+        </div>
+      </header>
+      <div class="dashboard-content">
+        <div class="dashboard-heading">
+          <div>
+            <p class="eyebrow">WEEKLY OVERVIEW <span id="today-label"></span></p>
+            <h1 id="dashboard-title">カレンダー</h1>
+            <p id="dashboard-subtitle" class="dashboard-subtitle">予定を確認できます。</p>
+          </div>
+        </div>
+        <div id="notice" class="notice" role="status"></div>
+        <div id="calendar-view" class="app-view active-view"><div id="deadline-alert" class="deadline-alert hidden" role="alert"></div><div class="calendar-layout"><div class="calendar-card"><div class="calendar-card-heading"><div class="calendar-month-nav"><button id="previous-month" class="month-button" type="button" aria-label="前の月">◀</button><strong id="calendar-month"></strong><button id="next-month" class="month-button" type="button" aria-label="次の月">▶</button></div><span>日付を選択</span></div><div class="calendar-weekdays"><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span><span>日</span></div><div id="calendar-grid" class="calendar-grid"></div><form id="calendar-event-form" class="calendar-event-form"><div><span class="card-kicker">SELECTED DATE</span><strong id="selected-date-label">日付を選択してください</strong></div><input id="calendar-event-input" type="text" placeholder="予定名"><div class="calendar-date-period"><label>開始日<input id="calendar-event-date-start" type="date"></label><label>終了日<input id="calendar-event-date-end" type="date"></label></div><div class="calendar-period"><label>開始時間<input id="calendar-event-start" type="time"></label><label>終了時間<input id="calendar-event-end" type="time"></label></div><input id="calendar-event-members" class="calendar-members-input" type="text" placeholder="メンバー（例：田中、佐藤）"><label class="calendar-color-field">予定の色<input id="calendar-event-color" type="color" value="#e9664d"></label><div class="calendar-event-actions"><button id="calendar-event-save" type="submit">予定を保存</button><button id="calendar-event-delete" class="calendar-event-delete" type="button">削除</button></div></form><div id="calendar-event-detail" class="calendar-event-detail hidden"></div></div><div class="upcoming-card"><p class="card-kicker">TODAY</p><h2>今日の予定</h2><div id="calendar-events"><p class="empty-message">今日の予定はありません。</p></div></div></div></div>
+        <div id="submissions-view" class="app-view hidden">
+          <div class="submissions-toolbar"><div><p class="card-kicker">TASK BOARD</p><h2>提出物一覧</h2></div><span id="submission-count" class="submission-count"></span></div>
+          <div id="submission-detail" class="submission-detail hidden"></div>
+          <form id="submission-form" class="submission-form">
+            <label class="submission-field submission-title-field"><span>提出物名</span><input id="submission-title" type="text" placeholder="例：ワーク提出" required></label>
+            <label class="submission-field"><span>教科</span><input id="submission-subject" type="text" placeholder="例：数学"></label>
+            <label class="submission-field"><span>提出日</span><input id="submission-due" type="date"></label>
+            <label class="submission-field submission-content-field"><span>内容</span><textarea id="submission-content" placeholder="提出する内容を入力"></textarea></label>
+            <button type="submit"><span aria-hidden="true">＋</span> 追加する</button>
+          </form>
+          <div id="submission-list" class="submission-list"></div>
+        </div>
+        <div id="timetable-view" class="app-view hidden"><div class="schedule-wrap"><table id="timetable" class="timetable"><thead></thead><tbody></tbody></table></div><div class="bottom-row"><p id="table-caption" class="table-caption"></p><p class="save-status"><span class="status-dot"></span><span id="save-status-text">ブラウザに自動保存</span></p></div></div>
+        <div id="events-view" class="app-view hidden"><div class="empty-view"><span class="empty-icon">✦</span><h2>イベント</h2><p>学校イベントはまだ登録されていません。</p></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
