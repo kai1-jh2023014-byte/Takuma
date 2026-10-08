@@ -198,29 +198,35 @@ function renderCalendar() {
 function updateCalendarEventForm() {
   const dateLabel = document.querySelector("#selected-date-label");
   const input = document.querySelector("#calendar-event-input");
-  const deleteButton = document.querySelector("#calendar-event-delete");
+  const form = document.querySelector("#calendar-event-form");
   if (!selectedCalendarDate) {
     dateLabel.textContent = "日付を選択してください";
     input.value = "";
     document.querySelector("#calendar-event-date-start").value = "";
     document.querySelector("#calendar-event-date-end").value = "";
-    document.querySelector("#calendar-event-start").value = "";
-    document.querySelector("#calendar-event-end").value = "";
     document.querySelector("#calendar-event-members").value = "";
-    document.querySelector("#calendar-event-color").value = "#e9664d";
-    deleteButton.disabled = true;
+    form.classList.remove("open");
     renderCalendarEventDetail();
     return;
   }
   dateLabel.textContent = selectedCalendarDate.replace(/-/g, "/");
-  const event = calendarEvents[selectedCalendarDate];
-  input.value = event?.title || "";
-  document.querySelector("#calendar-event-start").value = event?.startTime || "";
-  document.querySelector("#calendar-event-end").value = event?.endTime || "";
-  document.querySelector("#calendar-event-members").value = event?.members || "";
-  document.querySelector("#calendar-event-color").value = normalizeColor(event?.color);
-  deleteButton.disabled = !event;
+  input.value = "";
+  document.querySelector("#calendar-event-date-start").value = "";
+  document.querySelector("#calendar-event-date-end").value = "";
+  document.querySelector("#calendar-event-members").value = "";
+  form.classList.toggle("open", !calendarEvents[selectedCalendarDate]);
   renderCalendarEventDetail();
+}
+
+function positionCalendarEventForm(dateButton) {
+  const form = document.querySelector("#calendar-event-form");
+  const calendarCard = document.querySelector(".calendar-card");
+  const buttonRect = dateButton.getBoundingClientRect();
+  const cardRect = calendarCard.getBoundingClientRect();
+  const left = buttonRect.left - cardRect.left - calendarCard.clientLeft;
+  const top = buttonRect.bottom - cardRect.top - calendarCard.clientTop + 8;
+  form.style.left = `${Math.max(0, Math.min(left, calendarCard.clientWidth - form.offsetWidth))}px`;
+  form.style.top = `${Math.max(0, Math.min(top, calendarCard.clientHeight - form.offsetHeight))}px`;
 }
 
 function renderCalendarEventDetail() {
@@ -321,7 +327,10 @@ document.querySelector("#calendar-grid").addEventListener("click", (event) => {
   if (!dateButton) return;
   selectedCalendarDate = dateButton.dataset.date;
   updateCalendarEventForm();
-  document.querySelector("#calendar-event-input").focus();
+  if (!calendarEvents[selectedCalendarDate]) {
+    positionCalendarEventForm(dateButton);
+    document.querySelector("#calendar-event-input").focus();
+  }
 });
 
 document.querySelector("#calendar-events").addEventListener("click", (event) => {
@@ -329,7 +338,11 @@ document.querySelector("#calendar-events").addEventListener("click", (event) => 
   if (!eventButton) return;
   selectedCalendarDate = eventButton.dataset.date;
   updateCalendarEventForm();
-  document.querySelector("#calendar-event-input").focus();
+  const dateButton = document.querySelector(`#calendar-grid [data-date="${selectedCalendarDate}"]`);
+  if (!calendarEvents[selectedCalendarDate] && dateButton) {
+    positionCalendarEventForm(dateButton);
+    document.querySelector("#calendar-event-input").focus();
+  }
 });
 
 document.querySelector("#calendar-event-form").addEventListener("submit", (event) => {
@@ -337,6 +350,10 @@ document.querySelector("#calendar-event-form").addEventListener("submit", (event
   if (!selectedCalendarDate) return;
   const title = document.querySelector("#calendar-event-input").value.trim();
   if (!title) return;
+  if (calendarEvents[selectedCalendarDate]) {
+    showNotice("この日にはすでに予定があります");
+    return;
+  }
   const rangeStart = document.querySelector("#calendar-event-date-start").value || selectedCalendarDate;
   const rangeEnd = document.querySelector("#calendar-event-date-end").value || rangeStart;
   if (rangeStart > rangeEnd) {
@@ -345,28 +362,19 @@ document.querySelector("#calendar-event-form").addEventListener("submit", (event
   }
   const eventData = {
     title,
-    startTime: document.querySelector("#calendar-event-start").value,
-    endTime: document.querySelector("#calendar-event-end").value,
     members: document.querySelector("#calendar-event-members").value.trim(),
-    color: normalizeColor(document.querySelector("#calendar-event-color").value),
+    color: "#e9664d",
     rangeStart,
     rangeEnd
   };
-  const previousEvent = calendarEvents[selectedCalendarDate];
-  if (previousEvent) getDateKeys(previousEvent.rangeStart || selectedCalendarDate, previousEvent.rangeEnd || selectedCalendarDate).forEach((date) => delete calendarEvents[date]);
+  if (getDateKeys(rangeStart, rangeEnd).some((date) => calendarEvents[date])) {
+    showNotice("期間内にすでに予定がある日があります");
+    return;
+  }
   getDateKeys(rangeStart, rangeEnd).forEach((date) => { calendarEvents[date] = { ...eventData }; });
   saveCalendarEvents();
   renderCalendar();
   showNotice("予定を保存しました");
-});
-
-document.querySelector("#calendar-event-delete").addEventListener("click", () => {
-  if (!selectedCalendarDate || !calendarEvents[selectedCalendarDate]) return;
-  const event = calendarEvents[selectedCalendarDate];
-  getDateKeys(event.rangeStart || selectedCalendarDate, event.rangeEnd || selectedCalendarDate).forEach((date) => delete calendarEvents[date]);
-  saveCalendarEvents();
-  renderCalendar();
-  showNotice("予定を削除しました");
 });
 
 document.querySelector("#previous-month").addEventListener("click", () => {
